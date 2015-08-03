@@ -323,7 +323,7 @@ var HPI = (function(window, $) {
         var tr = App.config.appContext.find(".haiti-listing table tbody tr[data-building=\"" + name + "\"]");
         var index = tr.attr("data-index");
         var page = Math.ceil(+index / 10);
-        _showPage(App.config.appContext.find(".haiti-listing table"), App.config.appContext.find(".haiti-listing > table > tbody > tr"), 10, page, page);
+        _showPage(App.config.appContext.find(".haiti-listing > table"), App.config.appContext.find(".haiti-listing > table > tbody > tr"), 10, page, page);
         App.config.appContext.find(".haiti-listing table table tr").show();
         $('html, body').animate({
             scrollTop: tr.offset().top - tr.height()
