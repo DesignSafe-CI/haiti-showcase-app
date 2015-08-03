@@ -1,0 +1,206 @@
+/*globals window, jQuery, console*/
+/*eslint quotes:0, key-spacing:0, no-multi-spaces:0, comma-spacing:0, space-infix-ops:0, no-underscore-dangle:0, no-loop-func:1, eqeqeq:1, no-trailing-spaces:1*/
+/*
+    Showcase application using the Haiti Priority Index information.
+    We'll be calling the adama service /walter-dev/haiti_v0.1 .
+    Building model:
+    {
+        Ace  [ft²]: "33"
+        Building: "A001"
+        Captive  Columns: "Y"
+        Column Area  [ft²]: "67"
+        Column Index  [%]: "0.17"
+        Concrete Wall  Area E-W [ft²]: "0"
+        Concrete Wall  Area N-S [ft²]: "0"
+        Date: "26-Jun"Diagram: "https://nees.org/site/collections/haiti/Diagrams/A001-Diagram.pdf"
+        Effective  Wall Area: "0"
+        First Floor Area  [ft²]: "9661"
+        Latitude: 18.554472222222223
+        Longitude: -72.3033611111111
+        Masonry Wall  Area E-W [ft²]: "102"
+        Masonry Wall  Area N-S [ft²]: "0"
+        Masonry Wall  Damage: "Severe"
+        Notes: "Pic. 1544 for arch. Detail on E. side/ ~2" mortar cover on bldg. cols."
+        Number: "1"
+        Number of  Floors: "2"
+        Permenant  Drift: "N"
+        Photographer: "Steeve"
+        Pictures: "https://nees.org/site/collections/haiti/mainpics/A001.JPG"
+        Priority Index  [%]: "0.17"
+        Reinforced  Concrete Damage: "Severe"
+        Roof  Type: "Concrete"
+        Team: "A"
+        Total Floor Area  [ft²]: "19321"
+        Wall Index  [%]: "0"
+    }
+*/
+var HPI = (function(window, $) {
+    "use strict";
+
+    //var appContext = $("[data-app-name=\"haiti-priority-index-app\"]");
+    var App = {};
+    App.config = {
+            "baseNS": {"namespace": "walter-dev", "service": "haiti_v0.1" },
+            "appContext": $("[data-app-name=\"haiti-priority-index-app\"]")
+        };
+
+    var _createRow = function(obj){
+        var st1 = $("<table class=\"table table-condensed \"><tbody></tbody></table");
+        var st2 = $("<table class=\"table table-condensed\"><tbody></tbody></table");
+        var row = $("<tr data-building = \"" + obj.Building + "\">" +
+                    "<td>" + obj["Building"] + "</td>" +
+                    "<td>" + obj["Number"] + "</td>" +
+                    "<td>" + obj["Number of  Floors"] + "</td>" +
+                    "<td>" + obj["Total Floor Area  [ft\u00b2]"] + "</td>" +
+                    "<td>" + obj["First Floor Area  [ft\u00b2]"] + "</td>" +
+                    "<td>" + obj["Roof  Type"] + "</td>" +
+                    "<td class=\"cwa subtable\"></td>" +
+                    "<td>" + obj["Reinforced  Concrete Damage"] + "</td>" +
+                    "<td class=\"mwa subtable\"></td>" +
+                    "<td>" + obj["Masonry Wall  Damage"] + "</td>" +
+                    "<td>" + obj["Column Area  [ft\u00b2]"] +  "</td>" +
+                    "<td>" + obj["Effective  Wall Area"] + "</td>" +
+                    "<td>" + obj["Permenant  Drift"] + "</td>" +
+                    "<td>" + obj["Column Index  [%]"] + "</td>" +
+                    "<td>" + obj["Wall Index  [%]"] + "</td>" +
+                    "<td>" + obj["Priority Index  [%]"] + "</td>" +
+                    "<td>" + obj["Team"] + "</td>" +
+                    "</tr>");
+        st1.find("tbody").append("<tr>" +
+                    "<td>" + obj["Concrete Wall  Area E-W [ft\u00b2]"] + "</td>" +
+                    "</tr><tr>" +
+                    "<td>" + obj["Concrete Wall  Area N-S [ft\u00b2]"] + "</td>" +
+                "</tr>");
+        row.find(".cwa").append(st1);
+        st2.find("tbody").append("<tr>" +
+                    "<td>" + obj["Masonry Wall  Area E-W [ft\u00b2]"] + "</td>" +
+                    "</tr><tr>" +
+                    "<td>" + obj["Masonry Wall  Area N-S [ft\u00b2]"] + "</td>" +
+                "</tr>");
+        row.find(".mwa").append(st2);
+        return row;
+    };
+
+    var _appendPager = function(table, pager){
+        var row = $(".app-pager-row", table);
+        var cell;
+        var append = false;
+        if(row.length <= 0){
+            row = $("<tr class=\"blaster-pager-row\"></tr>");
+            cell = $("<td colspan=\"5\"></td>");
+            row.append(cell);
+            append = true;
+        }else{
+            cell = $("td", row);
+        }
+        cell.append(pager);
+        if(append){
+            table.append(row);
+        }
+        row.show();
+    };
+
+    var _showPage = function(table, objs, pageLength, curPage, page){
+        var trs = $("tbody tr", table);
+        trs.hide();
+        var tr;
+        for(var i = (page - 1) * pageLength; i < ((page - 1) * pageLength + (pageLength - 1)) && i < (page * pageLength); i++){
+            tr = $(trs[i]);
+            tr.show();
+        }
+        curPage = +page;
+        $(".app-pager", table).remove();
+        var ul = _createPager(table, results, pageLength, curPage);
+        _appendPager(table, ul);
+    };
+
+    var _createPager = function(table, objs, pageLength, curPage){ 
+        var pages = Math.ceil(objs.length / pageLength);
+        var ul = $("<ul class=\"app-pager\"></ul>");
+        
+        if(pages < 2){ return ul; }
+
+        ul.append("<li><a href=\"previous\">Previous</a></li>");
+        if(curPage == 1){
+            ul.append("<li><span>1</span></li>");
+        }else{
+            ul.append("<li " + (curPage == 1? "class=\"selected\"" : "") + "><a href=\"1\">1</a></li>");
+        }
+        if(curPage - 2 != 1 && curPage - 2 > 1){
+            ul.append("<li><span>...</span></li>");
+        }
+        if(curPage - 1 != 1 && curPage - 1 > 1){
+            ul.append("<li><a href=\"" + (curPage - 1) + "\">" + (curPage - 1) + "</a></li>");
+        }
+        if(curPage != 1 && curPage != pages) {
+            ul.append("<li><span>" + curPage + "</span></li>");
+        }
+        if(curPage + 1 != pages && curPage + 1 < pages){
+            ul.append("<li><a href=\"" + (curPage + 1) + "\">" + (curPage + 1) + "</a></li>");
+        }
+        if(curPage + 2 != pages && curPage + 2 < pages){
+            ul.append("<li><span>...</span></li>");
+        }
+        if(curPage == pages){
+            ul.append("<li><span>" + pages + "</span></li>");
+        }else{
+            ul.append("<li " + (curPage == pages? "class=\"selected\"" : "") + "><a href=\"" + pages + "\">" + pages + "</a></li>");
+        }
+        ul.append("<li><a href=\"next\">Next</a></li>");
+        $("a", ul).click(function(e){
+            e.preventDefault();
+            var page = $(this).attr('href');
+            if (page == 'previous' && curPage - 1 > 0){
+                page = curPage - 1;
+            }else if(page == 'previous' && curPage - 1 <= 0){
+               page = 1;
+            }else if(page == 'next' && curPage + 1 <= pages){
+                page = curPage + 1;
+            }else if(page == 'next' && curPage + 1 > pages){
+                page = pages;
+            }
+            _showPage(table, objs, pageLength, curPage, page);
+        });
+        return ul;
+    };
+
+    var _printJobsListing = function( result ){
+        var data = JSON.parse(result.data);
+        var objs = data.result;
+        var table = App.config.appContext.find(".haiti-listing table");
+        var tbody = table.find("tbody");
+        var page = isNan(table.attr("data-page")) ? 1 : table.attr("data-page");
+        var o, row;
+        for(var i = 0; i < objs.length; i++){
+            o = objs[i];
+            row = _createRow(o);
+            tbody.append(row);
+            tbody.find("tr").hide();
+        }
+        var ul = _createPager(table, objs, 10, page);
+
+
+    };
+
+    var listBuildings = function(){
+        var Agave = window.Agave;
+        var params = {};
+        $.extend(params, this.config.baseNS);
+        Agave.api.adama.list(
+            params,
+            _printJobsListing,
+            function(err){
+                console.log(err);
+            }
+        );
+    };
+
+    App.listBuildings = listBuildings;
+    return App;
+})(window, jQuery);
+(function(window, $){
+    window.addEventListener("Agave::ready", function() {
+        HPI.listBuildings();
+    });
+
+})(window, jQuery);
