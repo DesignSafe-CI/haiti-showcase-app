@@ -348,26 +348,30 @@ var HPI = (function(window, $) {
     var _printGraphs = function( result ){
         var data = JSON.parse(result.data);
         var objs = data.result;
-        var o, nf, cwa, mwa, tfa, x;
+        var o, nf, cwa, mwa, tfa, x, pi;
         var nfo = {};
         var mwa_tfa = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         var cwa_tfa = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        var pind = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         for(var i = 0; i < objs.length; i++){
             o = objs[i];
             nf = o["Number of  Floors"];
             cwa = o["Concrete Wall  Area E-W [ft\u00b2]"] + o["Concrete Wall  Area N-S [ft\u00b2]"];
             mwa = o["Masonry Wall  Area E-W [ft\u00b2]"] + o["Masonry Wall  Area N-S [ft\u00b2]"];
             tfa = o["Total Floor Area  [ft\u00b2]"];
+            pi = o["Priority Index  [%]"];
             if(typeof nfo[nf] == "undefined"){
                 nfo[nf] = {};
                 nfo[nf].count = 1;
             }else{
                 nfo[nf].count += 1;
             }
+            /*
             x = mwa/tfa;
             switch(true){
                 case (x == 0):
                     mwa_tfa[0] += 1;
+                    break;
                 case (x < 0.1):
                     mwa_tfa[1] += 1;
                     break;
@@ -398,12 +402,16 @@ var HPI = (function(window, $) {
                 case (x < 1):
                     mwa_tfa[10] += 1;
                     break;
+                default:
+                    console.log("mwa default: " + i + " ", x);
+                    break;
             }
             
             x = cwa/tfa;
             switch(true){
                 case (x == 0):
                     cwa_tfa[0] += 1;
+                    break;
                 case (x < 0.1):
                     cwa_tfa[1] += 1;
                     break;
@@ -434,6 +442,46 @@ var HPI = (function(window, $) {
                 case (x < 1):
                     cwa_tfa[10] += 1;
                     break;
+                default:
+                    console.log("cwa default: ", x);
+                    break;
+            }*/
+
+            x = pi;
+            switch(true){
+                case (x == 0):
+                    pind[0] += 1;
+                    break;
+                case (x < 0.1):
+                    pind[1] += 1;
+                    break;
+                case (x < 0.2):
+                    pind[2] += 1;
+                    break;
+                case (x < 0.3):
+                    pind[3] += 1;
+                    break;
+                case (x < 0.4):
+                    pind[4] += 1;
+                    break;
+                case (x < 0.5):
+                    pind[5] += 1;
+                    break;
+                case (x < 0.6):
+                    pind[6] += 1;
+                    break;
+                case (x < 0.7):
+                    pind[7] += 1;
+                    break;
+                case (x < 0.8):
+                    pind[8] += 1;
+                    break;
+                case (x < 0.9):
+                    pind[9] += 1;
+                    break;
+                case (x < 1):
+                    pind[10] += 1;
+                    break;
             }
         }
         var bar = [];
@@ -451,6 +499,7 @@ var HPI = (function(window, $) {
         var data = google.visualization.arrayToDataTable(garr);
         var chart = new google.visualization.ColumnChart(document.querySelector(".haiti-charts-floor"));
         chart.draw(data, {"title": "No. Floors Distribution"});
+        /*
         bar = [];
         garr = []
         garr.push(["Masonry Wall Area / Total Floor Area", "Distribution", { role: "style"}, {role: "annotation"}]);
@@ -482,6 +531,23 @@ var HPI = (function(window, $) {
         data = google.visualization.arrayToDataTable(garr);
         chart = new google.visualization.ColumnChart(document.querySelector(".haiti-charts-cwa"));
         chart.draw(data, {"title": "Concrete Wall Area / Total Floor Area"});
+        */
+        bar = [];
+        garr = [];
+        garr.push(["Priority Index", "Distribution", { role: "style"}, {role: "annotation"}]);
+        for(var i = 0; i < cwa_tfa.length; i++){
+            if(i == 0){bar.push("0");}
+            else{bar.push("< 0." + i);}
+            bar.push((pind[i] / objs.length) * 100);
+            bar.push("#03A9F4");
+            bar.push(pind[i]);
+            garr.push(bar);  
+            bar = [];
+        }
+        data = google.visualization.arrayToDataTable(garr);
+        chart = new google.visualization.ColumnChart(document.querySelector(".haiti-charts-pind"));
+        chart.draw(data, {"title": "Priority Index Distrbution"});
+
     };
 
     var _showInTable = function(e){
