@@ -1,4 +1,4 @@
-/*globals window, jQuery, console*/
+/*globals window, jQuery, console, google*/
 /*eslint quotes:0, key-spacing:0, no-multi-spaces:0, comma-spacing:0, space-infix-ops:0, no-underscore-dangle:0, no-loop-func:1, eqeqeq:1, no-trailing-spaces:1*/
 /*
     Showcase application using the Haiti Priority Index information.
@@ -74,6 +74,24 @@ var HPI = (function(window, $) {
         row.show("300");
     };
 
+    var _showMarker = function(e){
+        e.preventDefault();
+        var p = $(this).parent().parent();
+        var bn = p.attr("data-building");
+        var m = App.markers[bn];
+        var el = $(".haiti-gmap");
+        m.setAnimation(google.maps.Animation.BOUNCE);
+        $('html, body').animate({
+            scrollTop: el.offset().top - 30
+        });
+        google.maps.event.trigger(m, 'click');
+        App.map.setCenter(m.getPosition());
+        App.map.setZoom(18);
+        setTimeout(function(){
+            m.setAnimation(null);
+        }, 2500);
+    };
+
     var _createRow = function(obj, i){
         var st1 = $("<table class=\"table table-condensed \"><tbody></tbody></table");
         var st2 = $("<table class=\"table table-condensed\"><tbody></tbody></table");
@@ -98,9 +116,15 @@ var HPI = (function(window, $) {
                     "<td>" + obj["Priority Index  [%]"] + "</td>" +
                     "<td>" + obj["Team"] + "</td>" +
                     "</tr>");
+
+        var ga = $("<a href=\"#\"><span class=\"glyphicon glyphicon-globe\"></span></a>");
+        ga.click(_showMarker);
+        row.find(".bname").append(ga);
+
         var a = $("<a href=\"#\">" + obj.Building + "</a>");
         a.click(_buildingToggleMD);
         row.find(".bname").append(a);
+
         st1.find("tbody").append("<tr>" +
                     "<td>" + obj["Concrete Wall  Area E-W [ft\u00b2]"] + "</td>" +
                     "</tr><tr>" +
@@ -262,7 +286,7 @@ var HPI = (function(window, $) {
                 var path;
                 for(var i = 0; i <  pics.length; i++){
                     path = pics[i].split("/");
-                    content += "<li><a href=\"" + pics[i] + "\">" + path[path.length - 1] + "</a></li>";
+                    content += "<li><a target=\"_blank\" href=\"" + pics[i] + "\">" + path[path.length - 1] + "</a></li>";
                 }
                 content +=            "<li class=\"hshow\"><a onClick=\"HPI.showInTable(event);\" href=\"" + b + "\">Show in Table</a>" + "</li>" +
                                   "</ul>" + 
@@ -286,6 +310,11 @@ var HPI = (function(window, $) {
             position: p,
             map: map,
             title: obj["Building"],
+            team: obj["Team"],
+            mwd: obj["Masonry Wall  Damage"],
+            nf: obj["Number of  Floors"],
+            pd: obj["Permenant  Drift"],
+            rcd: obj["Reinforced  Concrete Damage"]
         };
         var m = new google.maps.Marker(o);
         google.maps.event.addListener(m, 'click', _toggleInfoWindow);
@@ -316,13 +345,152 @@ var HPI = (function(window, $) {
         _showPage(table, objs, 10, 1, 1);
     };
 
+    var _printGraphs = function( result ){
+        var data = JSON.parse(result.data);
+        var objs = data.result;
+        var o, nf, cwa, mwa, tfa, x;
+        var nfo = {};
+        var mwa_tfa = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        var cwa_tfa = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        for(var i = 0; i < objs.length; i++){
+            o = objs[i];
+            nf = o["Number of  Floors"];
+            cwa = o["Concrete Wall  Area E-W [ft\u00b2]"] + o["Concrete Wall  Area N-S [ft\u00b2]"];
+            mwa = o["Masonry Wall  Area E-W [ft\u00b2]"] + o["Masonry Wall  Area N-S [ft\u00b2]"];
+            tfa = o["Total Floor Area  [ft\u00b2]"];
+            if(typeof nfo[nf] == "undefined"){
+                nfo[nf] = {};
+                nfo[nf].count = 1;
+            }else{
+                nfo[nf].count += 1;
+            }
+            x = mwa/tfa;
+            switch(true){
+                case (x == 0):
+                    mwa_tfa[0] += 1;
+                case (x < 0.1):
+                    mwa_tfa[1] += 1;
+                    break;
+                case (x < 0.2):
+                    mwa_tfa[2] += 1;
+                    break;
+                case (x < 0.3):
+                    mwa_tfa[3] += 1;
+                    break;
+                case (x < 0.4):
+                    mwa_tfa[4] += 1;
+                    break;
+                case (x < 0.5):
+                    mwa_tfa[5] += 1;
+                    break;
+                case (x < 0.6):
+                    mwa_tfa[6] += 1;
+                    break;
+                case (x < 0.7):
+                    mwa_tfa[7] += 1;
+                    break;
+                case (x < 0.8):
+                    mwa_tfa[8] += 1;
+                    break;
+                case (x < 0.9):
+                    mwa_tfa[9] += 1;
+                    break;
+                case (x < 1):
+                    mwa_tfa[10] += 1;
+                    break;
+            }
+            
+            x = cwa/tfa;
+            switch(true){
+                case (x == 0):
+                    cwa_tfa[0] += 1;
+                case (x < 0.1):
+                    cwa_tfa[1] += 1;
+                    break;
+                case (x < 0.2):
+                    cwa_tfa[2] += 1;
+                    break;
+                case (x < 0.3):
+                    cwa_tfa[3] += 1;
+                    break;
+                case (x < 0.4):
+                    cwa_tfa[4] += 1;
+                    break;
+                case (x < 0.5):
+                    cwa_tfa[5] += 1;
+                    break;
+                case (x < 0.6):
+                    cwa_tfa[6] += 1;
+                    break;
+                case (x < 0.7):
+                    cwa_tfa[7] += 1;
+                    break;
+                case (x < 0.8):
+                    cwa_tfa[8] += 1;
+                    break;
+                case (x < 0.9):
+                    cwa_tfa[9] += 1;
+                    break;
+                case (x < 1):
+                    cwa_tfa[10] += 1;
+                    break;
+            }
+        }
+        var bar = [];
+        var garr = [];
+        //garr.push(["No. Floors", "Distribution", { role: "style" }, { role: "annotation" }]);
+        garr.push(["Concrete Wall Area / Total Floor Area", "Distribution", { role: "style"}, {role: "annotation"}]);
+        for(var n in nfo){
+            bar.push(n);
+            bar.push(((+nfo[n].count / objs.length) * 100));
+            bar.push("#03A9F4");
+            bar.push(nfo[n].count);
+            garr.push(bar);
+            bar = [];
+        }
+        var data = google.visualization.arrayToDataTable(garr);
+        var chart = new google.visualization.ColumnChart(document.querySelector(".haiti-charts-floor"));
+        chart.draw(data, {"title": "No. Floors Distribution"});
+        bar = [];
+        garr = []
+        garr.push(["Masonry Wall Area / Total Floor Area", "Distribution", { role: "style"}, {role: "annotation"}]);
+        for(var i = 0; i < mwa_tfa.length; i++)
+        {
+            if(i == 0){bar.push("0");}
+            else{bar.push("< 0." + i);}
+            bar.push((mwa_tfa[i] / objs.length) * 100);
+            bar.push("#03A9F4");
+            bar.push(mwa_tfa[i]);
+            garr.push(bar);
+            bar = [];
+        } 
+        data = google.visualization.arrayToDataTable(garr);
+        chart = new google.visualization.ColumnChart(document.querySelector(".haiti-charts-mwa"));
+        chart.draw(data, {"title": "Masonry Wall Area / Total Floor Area"});
+        bar = [];
+        garr = [];
+        garr.push(["Concrete Wall Area / Total Floor Area", "Distribution", { role: "style"}, {role: "annotation"}]);
+        for(var i = 0; i < cwa_tfa.length; i++){
+            if(i == 0){bar.push("0");}
+            else{bar.push("< 0." + i);}
+            bar.push((cwa_tfa[i] / objs.length) * 100);
+            bar.push("#03A9F4");
+            bar.push(cwa_tfa[i]);
+            garr.push(bar);  
+            bar = [];
+        }
+        data = google.visualization.arrayToDataTable(garr);
+        chart = new google.visualization.ColumnChart(document.querySelector(".haiti-charts-cwa"));
+        chart.draw(data, {"title": "Concrete Wall Area / Total Floor Area"});
+    };
+
     var _showInTable = function(e){
         e.preventDefault();
         var a = $(".haiti-info-window .hshow > a");
         var name = a.attr("href");
         var tr = App.config.appContext.find(".haiti-listing table tbody tr[data-building=\"" + name + "\"]");
         var index = tr.attr("data-index");
-        var page = Math.ceil(+index / 10);
+        var page = Math.ceil((+index + 1) / 10);
         _showPage(App.config.appContext.find(".haiti-listing > table"), App.config.appContext.find(".haiti-listing > table > tbody > tr"), 10, page, page);
         App.config.appContext.find(".haiti-listing table table tr").show();
         $('html, body').animate({
@@ -345,12 +513,83 @@ var HPI = (function(window, $) {
         );
     };
 
+    var showGraphs = function(){
+        var Agave = window.Agave;
+        var params = {};
+        $.extend(params, this.config.baseNS);
+        Agave.api.adama.list(
+            params,
+            _printGraphs,
+            function(err){
+                console.log(err);
+            }
+        );
+    };
+
+    var identifyMarkersBy = function(event){
+        var p = event.target.value;
+        var color, m;
+        var t = {};
+        for(var mn in App.markers){
+            m = App.markers[mn];
+            if(p != "none"){
+                color = ('00000' + (Math.random()*(1<<24)|0).toString(16)).slice(-6);
+                if(typeof t[m[p]] == "undefined"){
+                    t[m[p]] = color;
+                }else{
+                    color = t[m[p]];
+                }
+                m.setIcon("http://www.googlemapsmarkers.com/v1/" + m[p].substring(0, 1) + "/" + color + "/");
+            } else {
+                m.setIcon("http://www.googlemapsmarkers.com/v1/ff5555/");
+            }
+        }
+    };
+
     var _gmapInit = function(){
         var options = {
             center: App.center,
             zoom:12
         }
         App.map = new google.maps.Map(document.querySelector(".haiti-gmap"), options);
+        var dropDownDiv = document.createElement("div");
+        dropDownDiv.setAttribute("style", "margin-top:5px; padding:5px; background:white; border:1px solid #ccc;");
+        var select = document.createElement("select");
+        select.setAttribute("id", "identifyby");
+        select.setAttribute("name", "identifyby");
+        var option = document.createElement("option");
+        option.setAttribute("value", "none");
+        option.textContent = "Select One";
+        select.appendChild(option);
+
+        option = document.createElement("option");
+        option.setAttribute("value", "team");
+        option.textContent = "Team";
+        select.appendChild(option);
+
+        option = document.createElement("option");
+        option.setAttribute("value", "mwd");
+        option.textContent = "Masonry Wall Damage";
+        select.appendChild(option);
+        option = document.createElement("option");
+        option.setAttribute("value", "nf");
+        option.textContent = "Number of Floors";
+        select.appendChild(option);
+        option = document.createElement("option");
+        option.setAttribute("value", "pd");
+        option.textContent = "Permanent Drift";
+        select.appendChild(option);
+        option = document.createElement("option");
+        option.setAttribute("value", "rcd");
+        option.textContent = "Reinforced Concrete Damage";
+        select.appendChild(option);
+        select.setAttribute("onchange", "HPI.identifyMarkersBy(event);");
+        var label = document.createElement("label");
+        label.setAttribute("for", "identifyby");
+        label.textContent = "Identify By: ";
+        dropDownDiv.appendChild(label);
+        dropDownDiv.appendChild(select);
+        App.map.controls[google.maps.ControlPosition.TOP_CENTER].push(dropDownDiv);
     };
 
     var printMap = function(objs){
@@ -360,11 +599,14 @@ var HPI = (function(window, $) {
     App.listBuildings = listBuildings;
     App.gmapInit = _gmapInit;
     App.showInTable = _showInTable;
+    App.identifyMarkersBy = identifyMarkersBy;
+    App.showGraphs = showGraphs;
     return App;
 })(window, jQuery);
 (function(window, $){
     'use strict';
     window.addEventListener("Agave::ready", function() {
         HPI.listBuildings();
+        HPI.showGraphs();
     });
 })(window, jQuery);
