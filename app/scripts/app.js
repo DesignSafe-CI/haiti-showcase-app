@@ -490,7 +490,7 @@ var HPI = (function(window, $) {
         garr.push(["Concrete Wall Area / Total Floor Area", "Distribution", { role: "style"}, {role: "annotation"}]);
         for(var n in nfo){
             bar.push(n);
-            bar.push(((+nfo[n].count / objs.length) * 100));
+            bar.push(((+nfo[n].count / objs.length)));
             bar.push("#03A9F4");
             bar.push(nfo[n].count);
             garr.push(bar);
@@ -498,7 +498,11 @@ var HPI = (function(window, $) {
         }
         var data = google.visualization.arrayToDataTable(garr);
         var chart = new google.visualization.ColumnChart(document.querySelector(".haiti-charts-floor"));
-        chart.draw(data, {"title": "No. Floors Distribution"});
+        chart.draw(data, {"title": "",
+                          vAxis: {format: "#%", title: "% of Buildings."},
+                          hAxis: {title: "No. of Floors."},
+                          legend: "none"
+                          });
         /*
         bar = [];
         garr = []
@@ -538,7 +542,7 @@ var HPI = (function(window, $) {
         for(var i = 0; i < cwa_tfa.length; i++){
             if(i == 0){bar.push("0");}
             else{bar.push("< 0." + i);}
-            bar.push((pind[i] / objs.length) * 100);
+            bar.push((pind[i] / objs.length));
             bar.push("#03A9F4");
             bar.push(pind[i]);
             garr.push(bar);  
@@ -546,7 +550,11 @@ var HPI = (function(window, $) {
         }
         data = google.visualization.arrayToDataTable(garr);
         chart = new google.visualization.ColumnChart(document.querySelector(".haiti-charts-pind"));
-        chart.draw(data, {"title": "Priority Index Distrbution"});
+        chart.draw(data, {"title": "",
+                          vAxis: {format: "#%", title: "% of Buildings."},
+                          hAxis: {title: "Priority Index."},
+                          legend: "none"
+        });
 
     };
 
